@@ -82,14 +82,17 @@ int main() {
 
     std::map<unsigned short,StellarBody> planetMap;
     std::map<unsigned short,wrappedObject> vboMap;
-    bool res = createBody(planetMap, vboMap, "fixed32kVert.obj", "planet.bmp", idList, "Planet 1", 10000000.0, glm::vec4(0,0,0,1), glm::vec4(1,0,0,0));
-    std::cout<<res<<std::endl;
-
+    bool res = createObject(planetMap, vboMap, "highVertTest.obj", "planet.bmp", idList, "Planet 1", 10000000.0,
+                            glm::vec4(0, 0, 0, 1), glm::vec4(1, 0, 0, 0));
+    std::cout<<"Planet 1 Check : "<<res<<std::endl;
+    res = createObject(planetMap, vboMap, "highVertTest.obj", "planet.bmp", idList, "Planet 2", 1000000.0,
+                       glm::vec4(0, 0, 0, 1), glm::vec4(1, 0, 0, 0));
+    std::cout<<"Planet 2 check : "<<res<<std::endl;
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
-
+    unsigned int i = 0;
     do {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);// 1st attribute buffer : vertices
         glUseProgram(idList.ProgramID);
@@ -101,9 +104,13 @@ int main() {
         glm::mat4 ProjectionMatrix = getProjectionMatrix();
         glm::mat4 ViewMatrix = getViewMatrix();
 
+        for (auto & it : planetMap) { // Manipulate bodies here
+            if (it.second.getName() == "Planet 2") {
+                moveObject(vboMap[it.second.getIndex()], idList, glm::vec4(0.025,0.0,0.0,0.0));
+            }
+        }
+
         for (auto & it : vboMap) {
-            const auto tmp = it.first;
-//            std::cout << planetMap[tmp].getName() << std::endl;
             drawObject(it.second, idList, ProjectionMatrix, ViewMatrix);
         }
 

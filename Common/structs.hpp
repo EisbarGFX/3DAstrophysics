@@ -32,6 +32,8 @@ struct wrappedObject{
     GLuint uvBuffer{};
     GLuint normalBuffer{};
     GLuint elementBuffer{};
+
+    const char * modelName;
 };
 
 #endif //INC_3DASTRO_STRUCTS_HPP

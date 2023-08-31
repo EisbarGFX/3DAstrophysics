@@ -13,6 +13,8 @@
 #include <vector>
 #include <iostream>
 #include <map>
+#include <filesystem>
+#include <regex>
 
 #include "loadShader.hpp"
 #include "../Common/control.hpp"
@@ -21,7 +23,7 @@
 #include "../Physics/StellarBody.hpp"
 #include "../Common/structs.hpp"
 
-bool createBody(
+bool createObject(
         std::map<unsigned short,StellarBody> & planetMap,
         std::map<unsigned short,wrappedObject> & vboMap,
         const char * objectPath,
@@ -36,6 +38,10 @@ void drawObject(
         IDList & idList,
         glm::mat4 & ProjectionMatrix,
         glm::mat4 & ViewMatrix);
+void moveObject(
+        wrappedObject & vbo,
+        IDList & idList,
+        glm::vec4 moveCommand);
 
 
 #endif //INC_3DASTRO_COMMANDS_HPP

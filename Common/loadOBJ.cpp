@@ -125,8 +125,6 @@ bool loadOBJ(
         }
     }
 
-    std::cout << "3\n";
-
     for (unsigned int i=0; i<vertexIndices.size(); i++) {
         // Get the indices of its attributes
         unsigned int vertexIndex = vertexIndices[i];

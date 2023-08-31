@@ -30,7 +30,6 @@ glm::mat4 getProjectionMatrix() {
 void computeMatricesFromInputs(GLFWwindow* window) {
     static double lastTime = glfwGetTime();
     double currentTime = glfwGetTime();
-//    std::cout << "" << float(currentTime - lastTime) << std::endl;
     auto deltaTime = 0.5f;//float(currentTime - lastTime);
     int width, height;
     glfwGetWindowSize(window, &width, &height);
@@ -76,6 +75,4 @@ void computeMatricesFromInputs(GLFWwindow* window) {
             position,
             position+direction,
             up);
-
-//    std::cout << "" << ViewMatrix[0][0] << ", "<<ViewMatrix[0][1]<<", "<<ViewMatrix[0][2]<<std::endl;
 }
