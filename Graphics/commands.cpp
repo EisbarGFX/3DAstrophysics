@@ -93,83 +93,84 @@ bool createObject(
 
 
 
-        for (auto & it : vboMap) { // Load from existing VBO
-            if (it.second.modelName == objName) {
-                vbo.indices = it.second.indices;
-                vbo.vertices = it.second.vertices;
-                vbo.uvs = it.second.uvs;
-                vbo.normals = it.second.normals;
+//        for (auto & it : vboMap) { // Load from existing VBO
+//            if (it.second.modelName == objName) {
+//                vbo.indices = it.second.indices;
+//                vbo.vertices = it.second.vertices;
+//                vbo.uvs = it.second.uvs;
+//                vbo.normals = it.second.normals;
+//
+//                _genBuffers(vbo);
+//                planetMap.insert(pair<unsigned short,StellarBody>(index, body));
+//                vboMap.insert(pair<unsigned short,wrappedObject>(index, vbo));
+//
+//                goto END;
+//            }
+//        }
+
+
+        for (auto f : filesystem::directory_iterator(cachePath)) { // Load From Cache
+            std::cout<<f.path().filename().string()<<std::endl;
+            if (f.path().filename().string() == (objName+cacheExtension)) {
+                FILE * file = fopen(f.path().c_str(), "r");
+                uint_least64_t headerSize = 256;
+                char line[headerSize];
+
+                std::string tmpNum;
+                std::vector<std::string> buffer;
+
+                while (fgets(line, sizeof(line), file)) {
+                    for (uint_fast64_t i = 0; i < headerSize; i++) {
+                        if (line[0] == 'i') {
+                            memmove(line, line+1, strlen(line));
+//                            std::cout<<line<<std::endl;
+                            vbo.indices.push_back(stoi(line));
+                            break;
+                        }
+                        else {
+
+                            if (line[i] != ',' && line[i] != '\000') {
+//                                std::cout<<"CHECK "<<line[i]<<std::endl;
+//                                std::cout<<line<<std::endl;
+                                tmpNum+=(line[i]);
+                            }
+                            else if (line[i] == ',') {
+                                buffer.push_back(tmpNum);
+                                tmpNum = "";
+//                                std::cout<<tmpNum<<std::endl;
+                            }
+                            else if (line[i] == '\000') {
+                                buffer.push_back(tmpNum);
+                                tmpNum = "";
+                                vbo.vertices.emplace_back(
+                                        stof(buffer[0]), stof(buffer[1]), stof(buffer[2])
+                                );
+                                vbo.uvs.emplace_back(
+                                        stof(buffer[3]), stof(buffer[4])
+                                );
+                                vbo.normals.emplace_back(
+                                        stof(buffer[5]), stof(buffer[6]), stof(buffer[7])
+                                );
+                                buffer.clear();
+                                break;
+                            }
+                            else {
+                                break;
+                            }
+
+                        }
+                    }
+                }
+
+                fclose(file);
+                std::cout << vbo.indices.size() << std::endl;
 
                 _genBuffers(vbo);
                 planetMap.insert(pair<unsigned short,StellarBody>(index, body));
                 vboMap.insert(pair<unsigned short,wrappedObject>(index, vbo));
 
                 goto END;
-            }
-        }
 
-
-        for (auto f : filesystem::directory_iterator(cachePath)) { // Load From Cache
-            if (f.path().filename().string() == (objName+cacheExtension)) {
-                FILE * file = fopen(f.path().c_str(), "r");
-                char line[256];
-
-                fgets(line, sizeof(line), file);
-                std::regex firstLine("\\|\\|\\+ [a-zA-Z0-9 ]+ \\+\\|\\|\n");
-                std::cmatch result;
-                if (std::regex_match(line, result, firstLine)) {
-
-                    while (fgets(line, sizeof(line), file)) {
-                        std::string stLine = line;
-                        stLine.erase(std::remove(stLine.begin(), stLine.end(), '\n'), stLine.end());
-                        if (line[0] == 'i') {
-                            vbo.indices.push_back(std::stoi(stLine.substr(1, stLine.size())));
-                        }
-                        else if(line[0] == 'v') {
-                            unsigned short pos1 = stLine.find_first_of(',');
-                            unsigned short pos2 = stLine.find_last_of(',');
-                            std::string ftOne = stLine.substr(1,pos1-1);
-                            std::string ftTwo = stLine.substr(pos1+1, pos2-pos1);
-                            vbo.vertices.emplace_back(
-                                    std::stof(ftOne),
-                                    std::stof(ftTwo),
-                                    std::stof(stLine.substr(pos2+1, stLine.size())));
-                        }
-                        else if(line[0] == 'u') {
-                            unsigned short pos1 = stLine.find_first_of(',');
-                            std::string ftOne = stLine.substr(1,pos1-1);
-                            vbo.uvs.emplace_back(
-                                    std::stof(ftOne),
-                                    std::stof(stLine.substr(pos1+1, stLine.size())));
-                        }
-                        else if(line[0] == 'n') {
-                            unsigned short pos1 = stLine.find_first_of(',');
-                            unsigned short pos2 = stLine.find_last_of(',');
-                            std::string ftOne = stLine.substr(1,pos1-1);
-                            std::string ftTwo = stLine.substr(pos1+1, pos2-pos1);
-                            vbo.normals.emplace_back(
-                                    std::stof(ftOne),
-                                    std::stof(ftTwo),
-                                    std::stof(stLine.substr(pos2+1, stLine.size())));
-                        }
-                    }
-
-                    fclose(file);
-                    std::cout << vbo.indices.size() << std::endl;
-
-                    _genBuffers(vbo);
-                    planetMap.insert(pair<unsigned short,StellarBody>(index, body));
-                    vboMap.insert(pair<unsigned short,wrappedObject>(index, vbo));
-
-                    goto END;
-                }
-                else {
-                    std::cout<<"Loaded File Is Not a Cache File!"<<std::endl;
-                    std::cout<<line<<" : "<<result[0]<<std::endl;
-                    fclose(file);
-                    filesystem::remove((cachePath + objName + cacheExtension).c_str());
-                    goto FALLBACK;
-                }
             }
         }
 
@@ -180,19 +181,18 @@ bool createObject(
         planetMap.insert(pair<unsigned short,StellarBody>(index, body));
         vboMap.insert(pair<unsigned short,wrappedObject>(index, vbo));
 
-        fprintf(file, "||+ %s +||\n", objName.c_str());
-        fprintf(file, "VT\n");
         for (auto & ind : vbo.indices) {
             fprintf(file, "i%d\n", ind);
         }
-        for (auto & vert : vbo.vertices) {
-            fprintf(file, "v%f,%f,%f\n", vert.x, vert.y, vert.z);
-        }
-        for (auto & uv : vbo.uvs) {
-            fprintf(file, "u%f,%f\n", uv.x, uv.y);
-        }
-        for (auto & norm : vbo.normals) {
-            fprintf(file, "n%f,%f,%f\n", norm.x, norm.y, norm.z);
+        for (uint_least64_t i = 0; i < vbo.vertices.size(); i++) {
+            auto vert = vbo.vertices[i];
+            auto uv = vbo.uvs[i];
+            auto norm = vbo.normals[i];
+            fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f\n",
+                    vert.x, vert.y, vert.z,
+                    uv.x, uv.y,
+                    norm.x, norm.y, norm.z
+                    );
         }
         fclose(file);
 

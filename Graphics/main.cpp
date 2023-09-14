@@ -92,9 +92,9 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
-    unsigned int i = 0;
+
     do {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);// 1st attribute buffer : vertices
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(idList.ProgramID);
 
         glm::vec3 lightPos = glm::vec3(5,5,5);
