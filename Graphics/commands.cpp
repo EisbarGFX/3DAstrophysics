@@ -56,8 +56,8 @@ void _genBuffers(
 
 bool createObject(
         // out
-        std::map<unsigned short,StellarBody> & planetMap,
-        std::map<unsigned short,wrappedObject> & vboMap,
+        std::map<uint_fast64_t,StellarBody> & planetMap,
+        std::map<uint_fast64_t,wrappedObject> & vboMap,
 
         // in
         const char * objectPath,
@@ -93,20 +93,20 @@ bool createObject(
 
 
 
-//        for (auto & it : vboMap) { // Load from existing VBO
-//            if (it.second.modelName == objName) {
-//                vbo.indices = it.second.indices;
-//                vbo.vertices = it.second.vertices;
-//                vbo.uvs = it.second.uvs;
-//                vbo.normals = it.second.normals;
-//
-//                _genBuffers(vbo);
-//                planetMap.insert(pair<unsigned short,StellarBody>(index, body));
-//                vboMap.insert(pair<unsigned short,wrappedObject>(index, vbo));
-//
-//                goto END;
-//            }
-//        }
+        for (auto & it : vboMap) { // Load from existing VBO
+            if (it.second.modelName == objName) {
+                vbo.indices = it.second.indices;
+                vbo.vertices = it.second.vertices;
+                vbo.uvs = it.second.uvs;
+                vbo.normals = it.second.normals;
+
+                _genBuffers(vbo);
+                planetMap.insert(pair<uint_fast64_t,StellarBody>(index, body));
+                vboMap.insert(pair<uint_fast64_t,wrappedObject>(index, vbo));
+
+                goto END;
+            }
+        }
 
 
         for (auto f : filesystem::directory_iterator(cachePath)) { // Load From Cache
@@ -166,8 +166,8 @@ bool createObject(
                 std::cout << vbo.indices.size() << std::endl;
 
                 _genBuffers(vbo);
-                planetMap.insert(pair<unsigned short,StellarBody>(index, body));
-                vboMap.insert(pair<unsigned short,wrappedObject>(index, vbo));
+                planetMap.insert(pair<uint_fast64_t,StellarBody>(index, body));
+                vboMap.insert(pair<uint_fast64_t,wrappedObject>(index, vbo));
 
                 goto END;
 
@@ -178,8 +178,8 @@ bool createObject(
         FILE * file = fopen((cachePath + objName + cacheExtension).c_str() , "w*");
 
         _genBuffers(vbo, vertices, uvs, normals);
-        planetMap.insert(pair<unsigned short,StellarBody>(index, body));
-        vboMap.insert(pair<unsigned short,wrappedObject>(index, vbo));
+        planetMap.insert(pair<uint_fast64_t,StellarBody>(index, body));
+        vboMap.insert(pair<uint_fast64_t,wrappedObject>(index, vbo));
 
         for (auto & ind : vbo.indices) {
             fprintf(file, "i%d\n", ind);
@@ -207,8 +207,8 @@ bool createObject(
 
             _genBuffers(vbo, vertices, uvs, normals);
 
-            planetMap.insert(pair<unsigned short, StellarBody>(index, body));
-            vboMap.insert(pair<unsigned short, wrappedObject>(index, vbo));
+            planetMap.insert(pair<uint_fast64_t, StellarBody>(index, body));
+            vboMap.insert(pair<uint_fast64_t, wrappedObject>(index, vbo));
 
         } else {
             return false;

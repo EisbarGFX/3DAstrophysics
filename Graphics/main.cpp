@@ -21,6 +21,10 @@ using namespace glm;
 
 GLFWwindow* window;
 
+
+std::vector<std::pair<uint_fast64_t, glm::vec4>> transformQ;
+
+
 const float width = 1920.0f;
 const float height = 1080.0f;
 const char * vsPath = "Graphics/VertexShader.glsl";
@@ -80,14 +84,15 @@ int main() {
     */
 
 
-    std::map<unsigned short,StellarBody> planetMap;
-    std::map<unsigned short,wrappedObject> vboMap;
+    std::map<uint_fast64_t,StellarBody> planetMap;
+    std::map<uint_fast64_t,wrappedObject> vboMap;
     bool res = createObject(planetMap, vboMap, "highVertTest.obj", "planet.bmp", idList, "Planet 1", 10000000.0,
-                            glm::vec4(0, 0, 0, 1), glm::vec4(1, 0, 0, 0));
+                            glm::vec4(1, 1, 1, 1), glm::vec4(1, 0, 0, 0));
     std::cout<<"Planet 1 Check : "<<res<<std::endl;
     res = createObject(planetMap, vboMap, "highVertTest.obj", "planet.bmp", idList, "Planet 2", 1000000.0,
-                       glm::vec4(0, 0, 0, 1), glm::vec4(1, 0, 0, 0));
+                       glm::vec4(0, 3, 0, 1), glm::vec4(1, 0, 0, 0));
     std::cout<<"Planet 2 check : "<<res<<std::endl;
+
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -104,14 +109,25 @@ int main() {
         glm::mat4 ProjectionMatrix = getProjectionMatrix();
         glm::mat4 ViewMatrix = getViewMatrix();
 
-        for (auto & it : planetMap) { // Manipulate bodies here
-            if (it.second.getName() == "Planet 2") {
-                moveObject(vboMap[it.second.getIndex()], idList, glm::vec4(0.025,0.0,0.0,0.0));
+        for (auto & planetIT : planetMap) { // Apply ind. planet tests here
+            if (planetIT.second.getName() == "Planet 2") {
+                transformQ.emplace_back(planetIT.second.getIndex(), glm::vec4(0.025, 0.0, 0.0, 0.0));
             }
         }
 
-        for (auto & it : vboMap) {
-            drawObject(it.second, idList, ProjectionMatrix, ViewMatrix);
+
+
+        auto transformIT = transformQ.begin();
+        while (transformIT != transformQ.end()) {
+            uint_fast64_t indexToFind = transformIT->first;
+            StellarBody * obj = & planetMap.at(indexToFind);
+            assert(obj->getIndex() == indexToFind);
+            moveObject(vboMap[transformIT->first], idList, transformIT->second);
+            transformIT = transformQ.erase(transformIT);
+        }
+
+        for (auto & vboIT : vboMap) {
+            drawObject(vboIT.second, idList, ProjectionMatrix, ViewMatrix);
         }
 
         glfwSwapBuffers(window);

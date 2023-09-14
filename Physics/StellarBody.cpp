@@ -4,16 +4,20 @@
 
 #include "StellarBody.hpp"
 
-#include <utility>
 
 double StellarBody::GravConstant = 6.674 * pow(10, -11);
 
-StellarBody::StellarBody(std::string name, double mass, glm::vec4 startingPosition, glm::vec4 startingMovement, unsigned short index) {
+StellarBody::StellarBody(std::string name, double mass, glm::vec4 startingPosition, glm::vec4 startingMovement, uint_fast64_t index) {
     this->name = std::move(name);
     this->mass = mass;
     this->position = startingPosition;
     this->movement = startingMovement;
     this->planetaryIndex = index;
+
+    if (startingPosition != glm::vec4(0,0,0,1)) {
+        std::cout<<"Queue added"<<std::endl;
+        transformQ.emplace_back(index, glm::vec4(startingPosition));
+    }
 }
 
 StellarBody::StellarBody() {
@@ -24,16 +28,19 @@ StellarBody::StellarBody() {
     this->planetaryIndex = 0;
 }
 
-unsigned short StellarBody::getIndex() const {
+uint_fast64_t StellarBody::getIndex() {
     return this->planetaryIndex;
 }
 
-double StellarBody::getMass() const {
+double StellarBody::getMass() {
     return this->mass;
 }
 
 glm::vec4 StellarBody::getPosition() {
     return this->position;
+}
+void StellarBody::setPosition(glm::vec3 toPoint) {
+    this->position = glm::vec4(toPoint.x, toPoint.y, toPoint.z, 1);
 }
 
 glm::vec4 StellarBody::getMovement() {

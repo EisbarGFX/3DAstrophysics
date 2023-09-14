@@ -24,8 +24,8 @@
 #include "../Common/structs.hpp"
 
 bool createObject(
-        std::map<unsigned short,StellarBody> & planetMap,
-        std::map<unsigned short,wrappedObject> & vboMap,
+        std::map<uint_fast64_t,StellarBody> & planetMap,
+        std::map<uint_fast64_t,wrappedObject> & vboMap,
         const char * objectPath,
         const char * texturePath,
         IDList & idList,
