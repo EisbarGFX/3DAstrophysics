@@ -28,8 +28,8 @@ glm::mat4 getProjectionMatrix() {
 
 
 void computeMatricesFromInputs(GLFWwindow* window) {
-    static double lastTime = glfwGetTime();
-    double currentTime = glfwGetTime();
+//    static double lastTime = glfwGetTime();
+//    double currentTime = glfwGetTime();
     auto deltaTime = 0.5f;//float(currentTime - lastTime);
     int width, height;
     glfwGetWindowSize(window, &width, &height);
@@ -70,7 +70,7 @@ void computeMatricesFromInputs(GLFWwindow* window) {
         position += up * deltaTime * speed;}
     float FoV = initialFoV;
 
-    ProjectionMatrix = glm::perspective(glm::radians(FoV), 16.0f / 9.0f, 0.1f, 100.0f);
+    ProjectionMatrix = glm::perspective(glm::radians(FoV), 16.0f / 9.0f, 0.1f, 10000.0f);
     ViewMatrix = glm::lookAt(
             position,
             position+direction,

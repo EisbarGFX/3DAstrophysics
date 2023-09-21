@@ -12,12 +12,14 @@
 using namespace glm;
 
 #include "../Graphics/loadShader.hpp"
+#include "../Common/commands.hpp"
 #include "../Common/control.hpp"
 #include "../Common/loadOBJ.hpp"
 #include "../Common/loadDDS.hpp"
-#include "../Physics/StellarBody.hpp"
-#include "../Graphics/commands.hpp"
 #include "../Common/structs.hpp"
+#include "../Physics/Particle.hpp"
+#include "../Physics/Particle.hpp"
+#include "../Physics/Cell.hpp"
 
 GLFWwindow* window;
 
@@ -29,6 +31,17 @@ const float width = 1920.0f;
 const float height = 1080.0f;
 const char * vsPath = "Graphics/VertexShader.glsl";
 const char * fsPath = "Graphics/FragmentShader.glsl";
+
+template class std::map<uint_fast64_t, Particle*>;
+
+
+[[maybe_unused]] auto printvec4 = [](glm::vec4 vec) {
+    std::cout<<std::endl;
+    std::cout<<"x: "<<vec.x<<std::endl;
+    std::cout<<"y: "<<vec.y<<std::endl;
+    std::cout<<"z: "<<vec.z<<std::endl;
+    std::cout<<"w: "<<vec.w<<std::endl;
+};
 
 
 int main() {
@@ -84,19 +97,24 @@ int main() {
     */
 
 
-    std::map<uint_fast64_t,StellarBody> planetMap;
+    std::map<uint_fast64_t,Particle*> particleMap;
     std::map<uint_fast64_t,wrappedObject> vboMap;
-    bool res = createObject(planetMap, vboMap, "highVertTest.obj", "planet.bmp", idList, "Planet 1", 10000000.0,
-                            glm::vec4(1, 1, 1, 1), glm::vec4(1, 0, 0, 0));
-    std::cout<<"Planet 1 Check : "<<res<<std::endl;
-    res = createObject(planetMap, vboMap, "highVertTest.obj", "planet.bmp", idList, "Planet 2", 1000000.0,
-                       glm::vec4(0, 3, 0, 1), glm::vec4(1, 0, 0, 0));
-    std::cout<<"Planet 2 check : "<<res<<std::endl;
+    std::map<uint_fast64_t,Cell*> cellMap;
+
+
+    bool res[256];
+    res[0] = createSun(particleMap, vboMap, "highVertTest.obj", "planet.bmp", idList, "Sun 1", 10000000.0,
+                            glm::vec4(10, 100, 100, 1), glm::vec4(1, 0, 0, 0));
+//    std::cout<<"Planet 1 Check : "<<res[0]<<std::endl;
+    res[1] = createPlanet(particleMap, vboMap, "highVertTest.obj", "planet.bmp", idList, "Planet 2", 1000000.0,
+                       glm::vec4(0, 300, 0, 1), glm::vec4(1, 0, 0, 0));
+//    std::cout<<"Planet 2 check : "<<res[1]<<std::endl;
 
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
+
 
     do {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -109,22 +127,77 @@ int main() {
         glm::mat4 ProjectionMatrix = getProjectionMatrix();
         glm::mat4 ViewMatrix = getViewMatrix();
 
-        for (auto & planetIT : planetMap) { // Apply ind. planet tests here
-            if (planetIT.second.getName() == "Planet 2") {
-                transformQ.emplace_back(planetIT.second.getIndex(), glm::vec4(0.025, 0.0, 0.0, 0.0));
+        for (auto & particleIT : particleMap) { // Apply ind. particle tests here
+            Particle* particle = particleIT.second;
+            if (particle->getName() == "Planet 2") {
+                transformQ.emplace_back(particle->getIndex(), glm::vec4(0.025, 25, 0.0, 0.0));
+            }
+
+
+            if (!particle->grouped) {
+                if (cellMap.empty()) {
+                    auto cell = new Cell(particle);
+                    cellMap.emplace(0,cell);
+                    particle->setCell(0);
+                }
+                else {
+                    int_fast64_t closest = -1;
+                    for (auto cmIT : cellMap) {
+                        if (glm::distance(cmIT.second->getPosition(),particle->getPPosition())
+                        <= Cell::cellWidth && cmIT.second->addParticle(particle)) {
+                            if (closest == -1
+                            || glm::distance(cmIT.second->getPosition(), particle->getPPosition())
+                            < glm::distance(cellMap[closest]->getPosition(), particle->getPPosition())) {
+                                closest = cmIT.first;
+                            }
+                        }
+                    }
+                    cellMap[closest]->addParticle(particle);
+                    particle->setCell(closest);
+                }
+//                printvec4(cellMap[0]->getPosition());
             }
         }
-
 
 
         auto transformIT = transformQ.begin();
         while (transformIT != transformQ.end()) {
             uint_fast64_t indexToFind = transformIT->first;
-            StellarBody * obj = & planetMap.at(indexToFind);
+            Particle* obj = particleMap.at(indexToFind);
             assert(obj->getIndex() == indexToFind);
-            moveObject(vboMap[transformIT->first], idList, transformIT->second);
+            moveObject(vboMap[transformIT->first], obj, idList, transformIT->second);
+            auto stor = cellMap[obj->getCell()]->validateCell();
+            if(!stor.first) {
+                std::cout<<"INVALID"<<std::endl;
+                for (auto p : stor.second) {
+
+                    int_fast64_t closest = -1;
+                    for (auto cmIT : cellMap) {
+                        if (glm::distance(cmIT.second->getPosition(),p->getPPosition())
+                            <= Cell::cellWidth && cmIT.second->addParticle(p)) {
+                            if (closest == -1
+                                || glm::distance(cmIT.second->getPosition(), p->getPPosition())
+                                   < glm::distance(cellMap[closest]->getPosition(), p->getPPosition())) {
+                                closest = cmIT.first;
+                            }
+                        }
+                    }
+                    if (closest == -1) {
+                        p->setCell(cellMap.size());
+                        cellMap.emplace(cellMap.size(), new Cell(p));
+                    }
+                    else {
+                        cellMap[closest]->addParticle(p);
+                        p->setCell(closest);
+                    }
+
+                }
+            }
+
+            printvec4(cellMap[0]->getPosition());
             transformIT = transformQ.erase(transformIT);
         }
+
 
         for (auto & vboIT : vboMap) {
             drawObject(vboIT.second, idList, ProjectionMatrix, ViewMatrix);
