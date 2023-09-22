@@ -7,7 +7,18 @@ set(CMAKE_CXX_STANDARD 17)
 set(OpenGlLinkers -lglut -lGLU -lGL)
 
 
-add_executable(3Dastro Graphics/loadShader.cpp Graphics/loadShader.hpp tutorialCode.cpp Common/control.hpp Common/control.cpp Common/loadOBJ.cpp Common/loadOBJ.hpp Common/loadDDS.cpp Common/loadDDS.hpp Physics/Particle.cpp Physics/Particle.hpp Graphics/main.cpp
+add_executable(3Dastro
+        Graphics/loadShader.cpp
+        Graphics/loadShader.hpp
+        Common/control.hpp
+        Common/control.cpp
+        Common/loadOBJ.cpp
+        Common/loadOBJ.hpp
+        Common/loadDDS.cpp
+        Common/loadDDS.hpp
+        Physics/Particle.cpp
+        Physics/Particle.hpp
+        Common/main.cpp
         Common/commands.cpp
         Common/commands.hpp
         Common/structs.hpp
