@@ -8,33 +8,39 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 #include <iostream>
+#include <filesystem>
 
 using namespace glm;
 
 #include "../Graphics/loadShader.hpp"
-#include "../Common/commands.hpp"
-#include "../Common/control.hpp"
-#include "../Common/loadOBJ.hpp"
-#include "../Common/loadDDS.hpp"
-#include "../Common/structs.hpp"
-#include "../Physics/Particle.hpp"
+#include "commands.hpp"
+#include "control.hpp"
+#include "loadOBJ.hpp"
+#include "loadDDS.hpp"
+#include "structs.hpp"
 #include "../Physics/Particle.hpp"
 #include "../Physics/Cell.hpp"
 
 GLFWwindow* window;
 
+/*TODO: theoretically all the xxMap.find() calls could just crash if one isn't found, but it SHOULD be safe?
+ * Add a failsafe or two later.
+ */
+//TODO: document code!! especially with doxygen (see Particle::addParticle)
 
+// Declare maps for global use
 std::vector<std::pair<uint_fast64_t, glm::vec4>> transformQ;
+std::map<uint_fast64_t,Particle*> particleMap;
+std::map<uint_fast64_t,wrappedObject> vboMap;
+std::map<uint_fast64_t,Cell*> cellMap;
 
 
-const float width = 1920.0f;
-const float height = 1080.0f;
+const int width = 1920;
+const int height = 1080;
 const char * vsPath = "Graphics/VertexShader.glsl";
 const char * fsPath = "Graphics/FragmentShader.glsl";
 
 template class std::map<uint_fast64_t, Particle*>;
-
-
 [[maybe_unused]] auto printvec4 = [](glm::vec4 vec) {
     std::cout<<std::endl;
     std::cout<<"x: "<<vec.x<<std::endl;
@@ -77,10 +83,10 @@ int main() {
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 //    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    IDList idList;
+    IDList idList{};
 
     glfwPollEvents();
-    glfwSetCursorPos(window, width/2, height/2);
+    glfwSetCursorPos(window, width/2.0, height/2.0);
     glClearColor(1.0f,1.0f,1.0f,0.3f);
     idList.ProgramID = LoadShaders(vsPath, fsPath);
 
@@ -97,19 +103,17 @@ int main() {
     */
 
 
-    std::map<uint_fast64_t,Particle*> particleMap;
-    std::map<uint_fast64_t,wrappedObject> vboMap;
-    std::map<uint_fast64_t,Cell*> cellMap;
-
+    auto objPath = filesystem::path("Graphics/objects/");
 
     bool res[256];
-    res[0] = createSun(particleMap, vboMap, "highVertTest.obj", "planet.bmp", idList, "Sun 1", 10000000.0,
+    res[0] = createSun(particleMap, vboMap, objPath.string().append("highVertTest.obj").c_str(), objPath.string().append("planet.bmp").c_str(), idList, "Sun 1", 10000000.0,
                             glm::vec4(10, 100, 100, 1), glm::vec4(1, 0, 0, 0));
 //    std::cout<<"Planet 1 Check : "<<res[0]<<std::endl;
-    res[1] = createPlanet(particleMap, vboMap, "highVertTest.obj", "planet.bmp", idList, "Planet 2", 1000000.0,
+    res[1] = createPlanet(particleMap, vboMap, objPath.string().append("highVertTest.obj").c_str(), objPath.string().append("planet.bmp").c_str(), idList, "Planet 2", 1000000.0,
                        glm::vec4(0, 300, 0, 1), glm::vec4(1, 0, 0, 0));
 //    std::cout<<"Planet 2 check : "<<res[1]<<std::endl;
 
+//    particleMap.emplace(10, new cellParticle(new Cell()));
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -130,13 +134,13 @@ int main() {
         for (auto & particleIT : particleMap) { // Apply ind. particle tests here
             Particle* particle = particleIT.second;
             if (particle->getName() == "Planet 2") {
-                transformQ.emplace_back(particle->getIndex(), glm::vec4(0.025, 25, 0.0, 0.0));
+                transformQ.emplace_back(particle->getIndex(), glm::vec4(0.025, 2.5, 0.0, 0.0));
             }
 
 
             if (!particle->grouped) {
                 if (cellMap.empty()) {
-                    auto cell = new Cell(particle);
+                    auto cell = new Cell(particle, 0);
                     cellMap.emplace(0,cell);
                     particle->setCell(0);
                 }
@@ -147,15 +151,14 @@ int main() {
                         <= Cell::cellWidth && cmIT.second->addParticle(particle)) {
                             if (closest == -1
                             || glm::distance(cmIT.second->getPosition(), particle->getPPosition())
-                            < glm::distance(cellMap[closest]->getPosition(), particle->getPPosition())) {
+                            < glm::distance(cellMap.find(closest)->second->getPosition(), particle->getPPosition())) {
                                 closest = cmIT.first;
                             }
                         }
                     }
-                    cellMap[closest]->addParticle(particle);
+                    cellMap.find(closest)->second->addParticle(particle);
                     particle->setCell(closest);
                 }
-//                printvec4(cellMap[0]->getPosition());
             }
         }
 
@@ -165,36 +168,34 @@ int main() {
             uint_fast64_t indexToFind = transformIT->first;
             Particle* obj = particleMap.at(indexToFind);
             assert(obj->getIndex() == indexToFind);
-            moveObject(vboMap[transformIT->first], obj, idList, transformIT->second);
-            auto stor = cellMap[obj->getCell()]->validateCell();
-            if(!stor.first) {
-                std::cout<<"INVALID"<<std::endl;
-                for (auto p : stor.second) {
-
-                    int_fast64_t closest = -1;
-                    for (auto cmIT : cellMap) {
-                        if (glm::distance(cmIT.second->getPosition(),p->getPPosition())
-                            <= Cell::cellWidth && cmIT.second->addParticle(p)) {
-                            if (closest == -1
-                                || glm::distance(cmIT.second->getPosition(), p->getPPosition())
-                                   < glm::distance(cellMap[closest]->getPosition(), p->getPPosition())) {
-                                closest = cmIT.first;
-                            }
-                        }
-                    }
-                    if (closest == -1) {
-                        p->setCell(cellMap.size());
-                        cellMap.emplace(cellMap.size(), new Cell(p));
-                    }
-                    else {
-                        cellMap[closest]->addParticle(p);
-                        p->setCell(closest);
-                    }
-
-                }
-            }
-
-            printvec4(cellMap[0]->getPosition());
+            moveObject(vboMap.find(transformIT->first)->second, obj, idList, transformIT->second);
+//            auto stor = cellMap.find(obj->getCell())->second->validateCell();
+//            if(!stor.first) {
+//                std::cout<<"INVALID"<<std::endl;
+//                for (auto p : stor.second) {
+//
+//                    int_fast64_t closest = -1;
+//                    for (auto cmIT : cellMap) {
+//                        if (glm::distance(cmIT.second->getPosition(),p->getPPosition())
+//                            <= Cell::cellWidth && cmIT.second->addParticle(p)) {
+//                            if (closest == -1
+//                                || glm::distance(cmIT.second->getPosition(), p->getPPosition())
+//                                   < glm::distance(cellMap.find(closest)->second->getPosition(), p->getPPosition())) {
+//                                closest = (int_fast64_t)cmIT.first;
+//                            }
+//                        }
+//                    }
+//                    if (closest == -1) {
+//                        p->setCell(cellMap.size());
+//                        cellMap.emplace(cellMap.size(), new Cell(p, cellMap.size()));
+//                    }
+//                    else {
+//                        cellMap.find(closest)->second->addParticle(p);
+//                        p->setCell(closest);
+//                    }
+//
+//                }
+//            }
             transformIT = transformQ.erase(transformIT);
         }
 
@@ -207,16 +208,19 @@ int main() {
         glfwPollEvents();
     }
     while (
-            glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-            glfwWindowShouldClose(window) == 0);
+            (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS
+            && glfwWindowShouldClose(window) == 0)
+            || cellMap.size()==2);
 
-    // Cleanup VBO & shader
-    // TODO: cleanup VBOs
+    // Cleanup VBOs and Particles
     glDeleteProgram(idList.ProgramID);
-//    glDeleteTextures(1, &Texture);
-//    glDeleteVertexArrays(1, &cubeVertexArray);
+    auto p = particleMap.begin();
+    while (p != particleMap.end()) {
+        deleteObject(particleMap, vboMap, cellMap, p->second);
+        p = particleMap.begin();
+    }
 
     // Close OpenGL
     glfwTerminate();
-    return 0;
+    exit(0);
 }

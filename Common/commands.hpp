@@ -21,7 +21,7 @@
 #include "loadOBJ.hpp"
 #include "loadDDS.hpp"
 #include "../Physics/Particle.hpp"
-#include "../Physics/Particle.hpp"
+#include "../Physics/Cell.hpp"
 #include "structs.hpp"
 
 bool createObject(
@@ -75,6 +75,11 @@ void moveObject(
         IDList & idList,
         glm::vec4 gMove // A coordinate or direction to move the object in physical space
         );
-
+void deleteObject(
+        std::map<uint_fast64_t,Particle*> & particleMap,
+        std::map<uint_fast64_t,wrappedObject> & vboMap,
+        std::map<uint_fast64_t,Cell*> & cellMap,
+        Particle *p
+        );
 
 #endif //INC_3DASTRO_COMMANDS_HPP

@@ -34,6 +34,7 @@ Particle::Particle() {
     this->planetaryIndex = 0;
 }
 
+
 uint_fast64_t Particle::getIndex() {
     return this->planetaryIndex;
 }

@@ -33,7 +33,7 @@ struct wrappedObject{
     GLuint normalBuffer{};
     GLuint elementBuffer{};
 
-    const char * modelName;
+    string modelName;
 };
 
 #endif //INC_3DASTRO_STRUCTS_HPP

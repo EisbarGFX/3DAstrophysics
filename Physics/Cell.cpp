@@ -14,22 +14,29 @@
     std::vector<Particle*> Particles;
  */
 
-Cell::Cell(Particle *particle) {
-    Particles.push_back(particle);
+Cell::Cell(Particle *particle, uint_fast64_t index  ) {
+    this->Particles.push_back(particle);
 
 //    masses.push_back(particle->getMass());
-    totalMass = particle->getMass();
+    this->totalMass = particle->getMass();
 
 //    positions.push_back(particle->getPPosition());
-    avgPosition = particle->getPPosition();
+    this->avgPosition = particle->getPPosition();
+    this->index = index;
 
     particle->grouped = true;
 }
 
 Cell::Cell() {
     avgPosition = glm::vec4(0,0,0,1);
+    totalMass = 0;
+    index = 0;
 }
 
+/// \brief addParticle takes a \c Particle pointer and updates the \c Cell with its info
+/// \param particle Pointer to a \c Particle to add to \c Cell
+/// \retval \c True if Particle was successfully added
+/// \retval \c False if unsuccessful
 bool Cell::addParticle(Particle *particle) {
     if (particle->grouped) {return false;}
 
@@ -55,6 +62,7 @@ bool Cell::addParticle(Particle *particle) {
             removeParticle(validationCheck.second);
             return addParticle(particle);
         }
+        else {return false;}
     }
     return false;
 }
@@ -66,7 +74,7 @@ void Cell::removeParticle(Particle *particle) {
             [particle](Particle* p){
                 return p==particle;
             }
-            ));
+            ), Particles.end());
     totalMass-=particle->getMass();
 //    positions.erase(std::remove_if(
 //            positions.begin(),
@@ -83,6 +91,11 @@ void Cell::removeParticle(Particle *particle) {
                                       auto z = (p1.z + p2->getPPosition().z) / 2.0f;
                                       return glm::vec4(x,y,z,1);
                                   });
+
+    if (this->Particles.empty()) {
+        cellMap.erase(this->index);
+        delete this;
+    }
 }
 
 
@@ -144,10 +157,37 @@ void Cell::moveParticle(Particle *particle) {
 
 }
 
-
 glm::vec4 Cell::getPosition() {
     return avgPosition;
 }
 double Cell::getMass() {
     return totalMass;
+}
+
+uint_fast64_t Cell::getIndex() {
+    return index;
+}
+
+
+/*
+ * Particle Values
+    double mass = 0.0;
+    uint_fast64_t planetaryIndex = 0;
+    uint_fast64_t cellIndex = 0;
+    glm::vec4 graphicalPosition = glm::vec4(0, 0, 0, 1);
+    glm::vec4 physicalPosition = glm::vec4(0,0,0,1);
+    glm::vec4 graphicalMovement = glm::vec4(0, 0, 0, 0);
+    glm::vec4 physicalMovement = glm::vec4(0,0,0,0);
+    std::string name;
+ */
+
+// CellParticle
+
+cellParticle::cellParticle(Cell *cell, uint_fast64_t index) {
+    this->mass = cell->getMass();
+    this->planetaryIndex = index;
+    this->cell = cell;
+    this->physicalPosition = cell->getPosition();
+    graphicalPosition = scalePos(cell->getPosition(), physToGraphConversion);
+    this->name = {"Particle Representing Cell %i", cellIndex};
 }

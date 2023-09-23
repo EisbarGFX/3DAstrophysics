@@ -22,7 +22,7 @@ class Particle{
 protected:
     double mass = 0.0;
     uint_fast64_t planetaryIndex = 0;
-    uint_fast64_t cellIndex = NULL;
+    uint_fast64_t cellIndex = 0;
     glm::vec4 graphicalPosition = glm::vec4(0, 0, 0, 1);
     glm::vec4 physicalPosition = glm::vec4(0,0,0,1);
     glm::vec4 graphicalMovement = glm::vec4(0, 0, 0, 0);

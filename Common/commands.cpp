@@ -67,9 +67,10 @@ bool createObject(
     const char * cacheExtension = ".cch";
 
     std::string objPath = objectPath;
-    std::string objName = objPath.substr(0, objPath.find('.'));
+    std::string objName = objPath.substr(0, objPath.find('.')).substr(objPath.find_last_of('/')+1, objPath.length());
+    std::cout<<objName<<std::endl;
 
-    uint_fast64_t index = vboMap.size() + 1;
+    uint_fast64_t index = vboMap.size();
 
     std::cout<< "Load Started at:" << glfwGetTime()<<std::endl;
     std::vector<glm::vec3> vertices;
@@ -79,7 +80,7 @@ bool createObject(
 
     if (vertices.size() >= 32000) {
         wrappedObject vbo = wrappedObject();
-        vbo.modelName = objName.c_str();
+        vbo.modelName = objName;
         GLuint texture = loadBMP_custom(texturePath);
         vbo.Texture = texture;
 
@@ -186,7 +187,7 @@ bool createObject(
     else {
         if (loaded) {
             wrappedObject vbo = wrappedObject();
-            vbo.modelName = objName.c_str();
+            vbo.modelName = objName;
             GLuint texture = loadBMP_custom(texturePath);
             vbo.Texture = texture;
 
@@ -205,7 +206,7 @@ bool createObject(
 
 bool createParticle (
     //out
-        std::map<uint_fast64_t,Particle*> & particleMap,
+    std::map<uint_fast64_t,Particle*> & particleMap,
     std::map<uint_fast64_t,wrappedObject> & vboMap,
 
     // in
@@ -276,7 +277,6 @@ void moveObject(
 
         glm::vec4 gMove)
 {
-    glUseProgram(idList.ProgramID);
 
     if (gMove.w == 0) {
         vbo.Model = glm::translate(vbo.Model,
@@ -363,4 +363,27 @@ void drawObject(
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(2);
+}
+
+void deleteObject(
+        std::map<uint_fast64_t,Particle*> & particleMap,
+        std::map<uint_fast64_t,wrappedObject> & vboMap,
+        std::map<uint_fast64_t,Cell*> & cellMap,
+
+        Particle *p
+        ) {
+    if (p != nullptr) {
+        cellMap.find(p->getCell())->second->removeParticle(p);
+
+        auto vbo = vboMap.find(p->getIndex())->second;
+        glBindVertexArray(0);
+        glDeleteTextures(1, &vbo.Texture);
+        glDeleteVertexArrays(1, &vbo.VAO);
+        GLuint *tmp[4] = {&vbo.vertexBuffer, &vbo.elementBuffer, &vbo.normalBuffer, &vbo.uvBuffer};
+        glDeleteBuffers(4, reinterpret_cast<const GLuint *>(tmp));
+        vboMap.erase(p->getIndex());
+
+        particleMap.erase(p->getIndex());
+        delete p;
+    }
 }
