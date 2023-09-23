@@ -282,6 +282,7 @@ void moveObject(
         vbo.Model = glm::translate(vbo.Model,
                                    scalePos(glm::vec3(gMove.x, gMove.y, gMove.z), Particle::physToGraphConversion));
         auto ppos = particle->getPPosition();
+
         particle->setPPosition(glm::vec3(
                 ppos.x + gMove.x,
                 ppos.y + gMove.y,

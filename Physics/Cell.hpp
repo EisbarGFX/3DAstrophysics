@@ -10,8 +10,7 @@
 #include <numeric>
 #include "Particle.hpp"
 
-class Cell;
-extern std::map<uint_fast64_t, Cell*> cellMap;
+extern std::map<uint_fast64_t,Particle*> particleMap;
 
 class Cell {
 protected:
@@ -21,6 +20,7 @@ protected:
     glm::vec4 avgPosition{};
     std::vector<Particle*> Particles;
     uint_fast64_t index;
+    uint_fast64_t particleIndex;
 
 public:
     static const uint_fast64_t cellWidth = (1000) / 2.0;//±1000km range from center of Cell
@@ -33,18 +33,20 @@ public:
     std::pair<bool, Particle*> validateParticle(Particle *particle);
     void moveParticle(Particle *particle);
 
-    glm::vec4 getPosition();
-    double getMass();
-    uint_fast64_t getIndex();
+    [[nodiscard]] glm::vec4 getPosition() const;
+    [[nodiscard]] double getMass() const;
+    [[nodiscard]] uint_fast64_t getIndex() const;
+    [[nodiscard]] uint_fast64_t getParticleIndex() const;
+    [[nodiscard]] std::vector<Particle*> getParticles() const;
 };
 
-//TODO: slight concern would be this can't go higher than Particle->Cell->cellParticle or it breaks the chain
-class cellParticle : public Particle {
+class CellParticle : public Particle {
     //TODO: update position of particle when cell is changed
 private:
     Cell *cell;
 public:
-    cellParticle(Cell *cell, uint_fast64_t index);
+    CellParticle(Cell *cell, uint_fast64_t index);
+    void update();
 };
 
 

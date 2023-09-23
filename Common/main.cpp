@@ -31,6 +31,7 @@ GLFWwindow* window;
 // Declare maps for global use
 std::vector<std::pair<uint_fast64_t, glm::vec4>> transformQ;
 std::map<uint_fast64_t,Particle*> particleMap;
+std::map<uint_fast64_t,Particle*> physicsMap;
 std::map<uint_fast64_t,wrappedObject> vboMap;
 std::map<uint_fast64_t,Cell*> cellMap;
 
@@ -107,13 +108,13 @@ int main() {
 
     bool res[256];
     res[0] = createSun(particleMap, vboMap, objPath.string().append("highVertTest.obj").c_str(), objPath.string().append("planet.bmp").c_str(), idList, "Sun 1", 10000000.0,
-                            glm::vec4(10, 100, 100, 1), glm::vec4(1, 0, 0, 0));
+                            glm::vec4(10, 100, 100, 1), glm::vec4(0.25, 2.5, 0, 0));
 //    std::cout<<"Planet 1 Check : "<<res[0]<<std::endl;
     res[1] = createPlanet(particleMap, vboMap, objPath.string().append("highVertTest.obj").c_str(), objPath.string().append("planet.bmp").c_str(), idList, "Planet 2", 1000000.0,
-                       glm::vec4(0, 300, 0, 1), glm::vec4(1, 0, 0, 0));
+                       glm::vec4(0, 300, 0, 1), glm::vec4(0, 0, 0, 0));
 //    std::cout<<"Planet 2 check : "<<res[1]<<std::endl;
 
-//    particleMap.emplace(10, new cellParticle(new Cell()));
+//    particleMap.emplace(10, new CellParticle(new Cell()));
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -131,13 +132,9 @@ int main() {
         glm::mat4 ProjectionMatrix = getProjectionMatrix();
         glm::mat4 ViewMatrix = getViewMatrix();
 
-        for (auto & particleIT : particleMap) { // Apply ind. particle tests here
+        for (auto & particleIT : particleMap) {
             Particle* particle = particleIT.second;
-            if (particle->getName() == "Planet 2") {
-                transformQ.emplace_back(particle->getIndex(), glm::vec4(0.025, 2.5, 0.0, 0.0));
-            }
-
-
+            //TODO: limit this to only if there are > 8 particles. Keeping without that check for now to test cells
             if (!particle->grouped) {
                 if (cellMap.empty()) {
                     auto cell = new Cell(particle, 0);
@@ -152,13 +149,24 @@ int main() {
                             if (closest == -1
                             || glm::distance(cmIT.second->getPosition(), particle->getPPosition())
                             < glm::distance(cellMap.find(closest)->second->getPosition(), particle->getPPosition())) {
-                                closest = cmIT.first;
+                                closest = (int_fast16_t)cmIT.first;
                             }
                         }
                     }
-                    cellMap.find(closest)->second->addParticle(particle);
-                    particle->setCell(closest);
+                    if (closest != -1) {
+                        cellMap.find(closest)->second->addParticle(particle);
+                        particle->setCell(closest);
+                    }
                 }
+            }
+
+
+            // TODO: physics updates!!
+            if (particleIT.second->grouped) {
+                for (auto it: cellMap.find(particleIT.second->getCell())->second->getParticles()) {
+                    // TODO: inter-cell updates
+                }
+                // TODO: intra-cell updates
             }
         }
 
@@ -169,36 +177,37 @@ int main() {
             Particle* obj = particleMap.at(indexToFind);
             assert(obj->getIndex() == indexToFind);
             moveObject(vboMap.find(transformIT->first)->second, obj, idList, transformIT->second);
-//            auto stor = cellMap.find(obj->getCell())->second->validateCell();
-//            if(!stor.first) {
-//                std::cout<<"INVALID"<<std::endl;
-//                for (auto p : stor.second) {
-//
-//                    int_fast64_t closest = -1;
-//                    for (auto cmIT : cellMap) {
-//                        if (glm::distance(cmIT.second->getPosition(),p->getPPosition())
-//                            <= Cell::cellWidth && cmIT.second->addParticle(p)) {
-//                            if (closest == -1
-//                                || glm::distance(cmIT.second->getPosition(), p->getPPosition())
-//                                   < glm::distance(cellMap.find(closest)->second->getPosition(), p->getPPosition())) {
-//                                closest = (int_fast64_t)cmIT.first;
-//                            }
-//                        }
-//                    }
-//                    if (closest == -1) {
-//                        p->setCell(cellMap.size());
-//                        cellMap.emplace(cellMap.size(), new Cell(p, cellMap.size()));
-//                    }
-//                    else {
-//                        cellMap.find(closest)->second->addParticle(p);
-//                        p->setCell(closest);
-//                    }
-//
-//                }
-//            }
+            auto stor = cellMap.find(obj->getCell())->second->validateCell();
+            if(!stor.first) {
+                std::cout<<"INVALID"<<std::endl;
+                for (auto p : stor.second) {
+
+                    int_fast64_t closest = -1;
+                    for (auto cmIT : cellMap) {
+                        if (glm::distance(cmIT.second->getPosition(),p->getPPosition())
+                            <= Cell::cellWidth && cmIT.second->addParticle(p)) {
+                            if (closest == -1
+                                || glm::distance(cmIT.second->getPosition(), p->getPPosition())
+                                   < glm::distance(cellMap.find(closest)->second->getPosition(), p->getPPosition())) {
+                                closest = (int_fast64_t)cmIT.first;
+                            }
+                        }
+                    }
+                    if (closest == -1) {
+                        p->setCell(cellMap.size());
+                        cellMap.emplace(cellMap.size(), new Cell(p, cellMap.size()));
+                    }
+                    else {
+                        cellMap.find(closest)->second->addParticle(p);
+                        p->setCell(closest);
+                    }
+
+                }
+            }
             transformIT = transformQ.erase(transformIT);
         }
 
+        printvec4(cellMap[0]->getPosition());
 
         for (auto & vboIT : vboMap) {
             drawObject(vboIT.second, idList, ProjectionMatrix, ViewMatrix);

@@ -13,10 +13,14 @@
 #include <utility>
 #include <map>
 
-// TODO: safe destructors to fix possible memory leaks
+#include "../Common/structs.hpp"
 
 
 extern std::vector<std::pair<uint_fast64_t, glm::vec4>> transformQ;
+#ifndef cellMap
+class Cell;
+extern std::map<uint_fast64_t,Cell*> cellMap;
+#endif // cellMap
 
 class Particle{
 protected:
@@ -37,15 +41,16 @@ public:
 
     Particle();
     Particle(std::string name, double mass, glm::vec4 startingPosition, glm::vec4 startingMovement, uint_fast64_t index);
-    // Initiator starting position/movement is given in physical space
+    // Constructor starting position/movement is given in physical space
 
-    uint_fast64_t getIndex();
-    double getMass();
-    glm::vec4 getGPosition(); // Graphical Position expressed in OpenGL "voxels"
-    glm::vec4 getGMovement();
-    glm::vec4 getPPosition(); // Physical Position expressed in meters
-    glm::vec4 getPMovement();
-    std::string getName();
+    [[nodiscard]] uint_fast64_t getIndex() const;
+    [[nodiscard]] double getMass() const;
+    [[nodiscard]] glm::vec4 getGPosition() const; // Graphical Position expressed in OpenGL "voxels"
+    [[nodiscard]] glm::vec4 getGMovement() const;
+    [[nodiscard]] glm::vec4 getPPosition() const; // Physical Position expressed in meters
+    [[nodiscard]] glm::vec4 getPMovement() const;
+    [[nodiscard]] std::string getName() const;
+    [[nodiscard]] uint_fast64_t getCell() const;
 
     Particle& operator=(const Particle& sb);
     bool operator<(const Particle& sb);
@@ -56,9 +61,10 @@ public:
     void setPPosition(glm::vec3 toPoint);
     void setGMovement(glm::vec3 nMove);
     void setPMovement(glm::vec3 nMove);
-
     void setCell(uint_fast64_t num);
-    uint_fast64_t getCell();
+
+    bool updateMovementOf(Particle* particle);
+    void move(translationx44Matrix translation);
 };
 
 class Planet : public Particle {

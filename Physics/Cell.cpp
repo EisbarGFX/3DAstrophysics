@@ -14,7 +14,7 @@
     std::vector<Particle*> Particles;
  */
 
-Cell::Cell(Particle *particle, uint_fast64_t index  ) {
+Cell::Cell(Particle *particle, uint_fast64_t index) {
     this->Particles.push_back(particle);
 
 //    masses.push_back(particle->getMass());
@@ -24,6 +24,10 @@ Cell::Cell(Particle *particle, uint_fast64_t index  ) {
     this->avgPosition = particle->getPPosition();
     this->index = index;
 
+    this->particleIndex = particleMap.size();
+    // TODO: review if this is the correct way to do it, or should a new Map be created?
+    particleMap.emplace(particleIndex, new CellParticle(this, particleIndex));
+
     particle->grouped = true;
 }
 
@@ -31,9 +35,10 @@ Cell::Cell() {
     avgPosition = glm::vec4(0,0,0,1);
     totalMass = 0;
     index = 0;
+    particleIndex = 0;
 }
 
-/// \brief addParticle takes a \c Particle pointer and updates the \c Cell with its info
+/// Inputs a \c Particle object and updates the \c Cell info regarding position, mass, and \c Particle list. If the \c Cell already contains 8 or more \c Particles, attempts are made to remove invalid \c Particles and replace them. This is done recursively until all \c Particles are valid or there are fewer than 8.
 /// \param particle Pointer to a \c Particle to add to \c Cell
 /// \retval \c True if Particle was successfully added
 /// \retval \c False if unsuccessful
@@ -64,7 +69,6 @@ bool Cell::addParticle(Particle *particle) {
         }
         else {return false;}
     }
-    return false;
 }
 
 void Cell::removeParticle(Particle *particle) {
@@ -125,13 +129,29 @@ void Cell::removeParticle(Particle *particle) {
 
     // TODO: are there more validation checks?
 
-    avgPosition = std::accumulate(Particles.begin(), Particles.end(), Particles[0]->getPPosition(),
+    // TODO: CENTER OF MASS -- apply to all other avgPosition udates
+    auto center = std::accumulate(Particles.begin(), Particles.end(), Particles[0]->getPPosition(),
                                   [](glm::vec4 p1, Particle* p2) {
                                       auto x = (p1.x + p2->getPPosition().x) / 2.0f;
                                       auto y = (p1.y + p2->getPPosition().y) / 2.0f;
                                       auto z = (p1.z + p2->getPPosition().z) / 2.0f;
                                       return glm::vec4(x,y,z,1);
                                   });
+    std::vector<glm::vec4> distancesFromCenter;
+    for (auto p : Particles) {
+        distancesFromCenter.push_back(
+            glm::distance(center, p->getPPosition()) * (float)(p->getMass() / totalMass));
+    }
+
+
+//    avgPosition = std::accumulate(distancesFromCenter.begin(), distancesFromCenter.end(), center,
+//                                  [](glm::vec4 p1, glm::vec4 p2){
+//                            auto x = p1.x + p2.x;
+//                            auto y = p1.y + p2.y;
+//                            auto z = p1.z + p2.z;
+//                            return glm::vec4(x,y,z,1);}
+//                            );
+
 
     return {validated, invalid};
 }
@@ -157,16 +177,26 @@ void Cell::moveParticle(Particle *particle) {
 
 }
 
-glm::vec4 Cell::getPosition() {
+glm::vec4 Cell::getPosition() const {
     return avgPosition;
 }
-double Cell::getMass() {
+
+double Cell::getMass() const {
     return totalMass;
 }
 
-uint_fast64_t Cell::getIndex() {
+uint_fast64_t Cell::getIndex() const {
     return index;
 }
+
+std::vector<Particle*> Cell::getParticles() const {
+    return Particles;
+}
+
+uint_fast64_t Cell::getParticleIndex() const {
+    return particleIndex;
+}
+
 
 
 /*
@@ -181,13 +211,36 @@ uint_fast64_t Cell::getIndex() {
     std::string name;
  */
 
-// CellParticle
+/*
+ *
+ * CellParticle
+ *
+ *
+*/
 
-cellParticle::cellParticle(Cell *cell, uint_fast64_t index) {
+CellParticle::CellParticle(Cell *cell, uint_fast64_t index) {
     this->mass = cell->getMass();
     this->planetaryIndex = index;
     this->cell = cell;
     this->physicalPosition = cell->getPosition();
     graphicalPosition = scalePos(cell->getPosition(), physToGraphConversion);
-    this->name = {"Particle Representing Cell %i", cellIndex};
+    this->name = {"Particle Representing Cell %i", cell->getIndex()};
+}
+
+void CellParticle::update() {
+    physicalPosition = cell->getPosition();
+    graphicalPosition = scalePos(cell->getPosition(), physToGraphConversion);
+    auto Particles = cell->getParticles();
+
+    auto mvmnt = std::accumulate(Particles.begin(), Particles.end(), Particles.at(0)->getPMovement(),
+                                [](glm::vec4 m1, Particle* p2){
+                                auto m2 = p2->getPMovement();
+                                auto x = (m1.x + m2.x) / 2.0f;
+                                auto y = (m1.y + m2.y) / 2.0f;
+                                auto z = (m1.z + m2.z) / 2.0f;
+                                return glm::vec4(x,y,z,0);
+    });
+
+    physicalMovement = mvmnt;
+    graphicalMovement = scalePos(mvmnt, physToGraphConversion);
 }

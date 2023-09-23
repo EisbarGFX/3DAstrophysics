@@ -24,6 +24,7 @@ Particle::Particle(std::string name, double mass, glm::vec4 startingPosition, gl
     }
 }
 
+//TODO: convert to matrices? idk.
 Particle::Particle() {
     this->name = "SHOULD NOT BE SHOWN";
     this->mass = 0.0;
@@ -34,16 +35,15 @@ Particle::Particle() {
     this->planetaryIndex = 0;
 }
 
-
-uint_fast64_t Particle::getIndex() {
+uint_fast64_t Particle::getIndex() const {
     return this->planetaryIndex;
 }
 
-double Particle::getMass() {
+double Particle::getMass() const {
     return this->mass;
 }
 
-glm::vec4 Particle::getGPosition() {
+glm::vec4 Particle::getGPosition() const {
     return this->graphicalPosition;
 }
 
@@ -51,39 +51,19 @@ void Particle::setGPosition(glm::vec3 toPoint) {
     this->graphicalPosition = glm::vec4(toPoint.x, toPoint.y, toPoint.z, 1);
 }
 
-glm::vec4 Particle::getGMovement() {
+glm::vec4 Particle::getGMovement() const {
     return this->graphicalMovement;
 }
 
-glm::vec4 Particle::getPPosition() {
+glm::vec4 Particle::getPPosition() const {
     return this->physicalPosition;
 }
 
-void Particle::setPPosition(glm::vec3 toPoint) {
-    this->physicalPosition = glm::vec4(toPoint.x, toPoint.y, toPoint.z, 1);
-}
-
-void Particle::setGMovement(glm::vec3 nMove) {
-    this->graphicalMovement = glm::vec4(nMove.x, nMove.y, nMove.z, 0);
-}
-
-glm::vec4 Particle::getPMovement() {
-    return this->physicalMovement;
-}
-
-void Particle::setPMovement(glm::vec3 nMove) {
-    this->physicalMovement = glm::vec4(nMove.x, nMove.y, nMove.z, 0);
-}
-
-
-std::string Particle::getName() {
+std::string Particle::getName() const {
     return this->name;
 }
 
-void Particle::setCell(uint_fast64_t num) {
-    this->cellIndex = num;
-}
-uint_fast64_t Particle::getCell() {
+uint_fast64_t Particle::getCell() const {
     return this->cellIndex;
 }
 
@@ -104,6 +84,33 @@ bool Particle::operator>(const Particle &sb) {
 }
 bool Particle::operator==(const Particle &sb) {
     return (this->name == sb.name && this->planetaryIndex == sb.planetaryIndex);
+}
+
+
+void Particle::setPPosition(glm::vec3 toPoint) {
+    this->physicalPosition = glm::vec4(toPoint.x, toPoint.y, toPoint.z, 1);
+}
+
+void Particle::setGMovement(glm::vec3 nMove) {
+    this->graphicalMovement = glm::vec4(nMove.x, nMove.y, nMove.z, 0);
+}
+
+glm::vec4 Particle::getPMovement() const {
+    return this->physicalMovement;
+}
+
+void Particle::setPMovement(glm::vec3 nMove) {
+    this->physicalMovement = glm::vec4(nMove.x, nMove.y, nMove.z, 0);
+}
+
+void Particle::setCell(uint_fast64_t num) {
+    this->cellIndex = num;
+}
+
+
+bool Particle::updateMovementOf(Particle *particle) {
+    auto distance = glm::distance(physicalPosition, particle->getPPosition());
+
 }
 
 
