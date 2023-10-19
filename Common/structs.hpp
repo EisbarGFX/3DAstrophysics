@@ -33,46 +33,79 @@ struct wrappedObject{
     GLuint normalBuffer{};
     GLuint elementBuffer{};
 
-    string modelName;
+    std::string modelName;
 };
 
-struct x44Matrix {
-    int n_col = 4;
-    int n_row = 4;
-    std::vector<float> positions{};
-    x44Matrix() = default;
-    explicit x44Matrix(float allVal) {
-        positions = std::vector<float>(16, allVal);
-    };
-    x44Matrix(glm::vec4 c1, glm::vec4 c2, glm::vec4 c3, glm::vec4 c4) {
-        positions = {
-                c1.x, c2.x, c3.x, c4.x,
-                c1.y, c2.y, c3.y, c4.y,
-                c1.z, c2.z, c3.z, c4.z,
-                c1.w, c2.w, c3.w, c4.w
-        };
-    }
-    float get(int col, int row) {return positions.at(col*n_col + row);};
-    void set(int col, int row, float val) {positions[col*n_col + row] = val;};
 
-};
-struct translationx44Matrix : x44Matrix{
-    translationx44Matrix(float x, float y, float z) : x44Matrix() {
-         this->positions = x44Matrix(
-                glm::vec4(1,0,0,x),
-                glm::vec4(0,1,0,y),
-                glm::vec4(0,0,1,z),
-                glm::vec4(0,0,0,1)).positions;
-    };
-};
-struct scalex44Matrix : x44Matrix{
-    scalex44Matrix(float x, float y, float z) : x44Matrix() {
-        this->positions = x44Matrix(
-                glm::vec4(x, 0, 0, 0),
-                glm::vec4(0, y, 0, 0),
-                glm::vec4(0, 0, z, 0),
-                glm::vec4(0, 0, 0, 1)).positions;
-    }
-};
+//struct x44Matrix {
+//    int n_col = 4;
+//    int n_row = 4;
+//    std::vector<float> positions{};
+//    x44Matrix() = default;
+//    explicit x44Matrix(float allVal) {
+//        positions = std::vector<float>(16, allVal);
+//    };
+//    x44Matrix(glm::vec4 c1, glm::vec4 c2, glm::vec4 c3, glm::vec4 c4) {
+//        positions = {
+//                c1.x, c2.x, c3.x, c4.x,
+//                c1.y, c2.y, c3.y, c4.y,
+//                c1.z, c2.z, c3.z, c4.z,
+//                c1.w, c2.w, c3.w, c4.w
+//        };
+//    }
+//    float get(int col, int row) {return positions.at(col*n_col + row);};
+//    void set(int col, int row, float val) {positions[col*n_col + row] = val;};
+//
+//};
+//struct translationx44Matrix : x44Matrix{
+//    float x, y, z, w;
+//    translationx44Matrix(float x, float y, float z) : x44Matrix() {
+//        this->x = x;
+//        this->y = y;
+//        this->z = z;
+//        this->w = 1;
+//        this->positions = x44Matrix(
+//                glm::vec4(1,0,0,x),
+//                glm::vec4(0,1,0,y),
+//                glm::vec4(0,0,1,z),
+//                glm::vec4(0,0,0,1)).positions;
+//    };
+//    explicit translationx44Matrix(float unif) : x44Matrix() {
+//        this->x = unif;
+//        this->y = unif;
+//        this->z = unif;
+//        this->w = 1;
+//        this->positions = x44Matrix(
+//                glm::vec4(1,0,0,unif),
+//                glm::vec4(0,1,0,unif),
+//                glm::vec4(0,0,1,unif),
+//                glm::vec4(0,0,0,1)).positions;
+//    }
+//};
+//struct scalex44Matrix : x44Matrix{
+//    float x, y, z, w;
+//    scalex44Matrix(float x, float y, float z) : x44Matrix() {
+//        this->x = x;
+//        this->y = y;
+//        this->z = z;
+//        this->w = 1;
+//        this->positions = x44Matrix(
+//                glm::vec4(x, 0, 0, 0),
+//                glm::vec4(0, y, 0, 0),
+//                glm::vec4(0, 0, z, 0),
+//                glm::vec4(0, 0, 0, 1)).positions;
+//    }
+//    explicit scalex44Matrix(float unif) : x44Matrix() {
+//        this->x = unif;
+//        this->y = unif;
+//        this->z = unif;
+//        this->w = 1;
+//        this->positions = x44Matrix(
+//                glm::vec4(unif, 0, 0, 0),
+//                glm::vec4(0, unif, 0, 0),
+//                glm::vec4(0, 0, unif, 0),
+//                glm::vec4(0, 0, 0, 1)).positions;
+//    }
+//};
 
 #endif //INC_3DASTRO_STRUCTS_HPP

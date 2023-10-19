@@ -8,6 +8,7 @@
 #include <glm/vec4.hpp>
 #include <algorithm>
 #include <numeric>
+
 #include "Particle.hpp"
 
 extern std::map<uint_fast64_t,Particle*> particleMap;
@@ -33,6 +34,11 @@ public:
     std::pair<bool, Particle*> validateParticle(Particle *particle);
     void moveParticle(Particle *particle);
 
+    Cell& operator=(const Cell& sb);
+    bool operator<(const Cell& sb);
+    bool operator>(const Cell& sb);
+    bool operator==(const Cell& sb);
+
     [[nodiscard]] glm::vec4 getPosition() const;
     [[nodiscard]] double getMass() const;
     [[nodiscard]] uint_fast64_t getIndex() const;
@@ -40,13 +46,13 @@ public:
     [[nodiscard]] std::vector<Particle*> getParticles() const;
 };
 
-class CellParticle : public Particle {
-    //TODO: update position of particle when cell is changed
+// TODO: delete
+class __attribute_deprecated_msg__("Use Particle instead") CellParticle : public Particle {
 private:
     Cell *cell;
 public:
     CellParticle(Cell *cell, uint_fast64_t index);
-    void update();
+    void update() override;
 };
 
 

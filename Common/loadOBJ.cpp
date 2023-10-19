@@ -59,6 +59,7 @@ void indexVBO(
 }
 
 
+// TODO: load files in memory then parse
 bool loadOBJ(
         const char * path,
         vector < glm::vec3 > & out_vertices,

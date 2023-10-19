@@ -53,6 +53,7 @@ void genBuffers(
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, (long)(vbo.indices.size() * sizeof(unsigned int)), &vbo.indices[0], GL_STATIC_DRAW);
 }
 
+// TODO: load files in memory then parse
 bool createObject(
         // out
         std::map<uint_fast64_t,wrappedObject> & vboMap,
@@ -171,6 +172,7 @@ bool createObject(
         for (auto & ind : vbo.indices) {
             fprintf(file, "i%d\n", ind);
         }
+        // TODO: encode memory management abilities (e.g. byte length of line/file)
         for (uint_least64_t i = 0; i < vbo.vertices.size(); i++) {
             auto vert = vbo.vertices[i];
             auto uv = vbo.uvs[i];
@@ -277,27 +279,18 @@ void moveObject(
 
         glm::vec4 gMove)
 {
-
     if (gMove.w == 0) {
         vbo.Model = glm::translate(vbo.Model,
-                                   scalePos(glm::vec3(gMove.x, gMove.y, gMove.z), Particle::physToGraphConversion));
-        auto ppos = particle->getPPosition();
-
-        particle->setPPosition(glm::vec3(
-                ppos.x + gMove.x,
-                ppos.y + gMove.y,
-                ppos.z + gMove.z));
-        particle->setGPosition(scalePos(particle->getPPosition(), Particle::physToGraphConversion));
+                                   glm::vec3(gMove.x, gMove.y, gMove.z) * Particle::physToGraphConversion);
     }
     if (gMove.w == 1) {
         vbo.Model = glm::translate(glm::mat4(1.0f),
-                                   scalePos(glm::vec3(gMove.x, gMove.y, gMove.z), Particle::physToGraphConversion));
-        particle->setPPosition(glm::vec3(
-                gMove.x,
-                gMove.y,
-                gMove.z));
-        particle->setGPosition(scalePos(particle->getPPosition(), Particle::physToGraphConversion));
+                                   glm::vec3(gMove.x, gMove.y, gMove.z) * Particle::physToGraphConversion);
     }
+
+    auto transform = translationx44Matrix(gMove.x, gMove.y, gMove.z);
+    particle->transformPPosition(transform);
+    particle->transformGPosition(transform * Particle::physToGraphConversion);
 }
 
 
@@ -373,7 +366,7 @@ void deleteObject(
 
         Particle *p
         ) {
-    if (p != nullptr) {
+    if (p != nullptr && !p->cellParticle) {
         cellMap.find(p->getCell())->second->removeParticle(p);
 
         auto vbo = vboMap.find(p->getIndex())->second;
@@ -384,6 +377,10 @@ void deleteObject(
         glDeleteBuffers(4, reinterpret_cast<const GLuint *>(tmp));
         vboMap.erase(p->getIndex());
 
+        particleMap.erase(p->getIndex());
+        delete p;
+    }
+    else if (p->cellParticle) {
         particleMap.erase(p->getIndex());
         delete p;
     }

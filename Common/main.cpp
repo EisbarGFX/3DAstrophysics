@@ -17,16 +17,14 @@ using namespace glm;
 #include "control.hpp"
 #include "loadOBJ.hpp"
 #include "loadDDS.hpp"
-#include "structs.hpp"
-#include "../Physics/Particle.hpp"
-#include "../Physics/Cell.hpp"
 
 GLFWwindow* window;
 
 /*TODO: theoretically all the xxMap.find() calls could just crash if one isn't found, but it SHOULD be safe?
- * Add a failsafe or two later.
- */
+ * Add a failsafe or two later. */
 //TODO: document code!! especially with doxygen (see Particle::addParticle)
+//TODO: Implement a separate/linked program to streamline creation of new bodies? In-program dialogue on the 3d world screen would seem impractical
+
 
 // Declare maps for global use
 std::vector<std::pair<uint_fast64_t, glm::vec4>> transformQ;
@@ -52,6 +50,21 @@ template class std::map<uint_fast64_t, Particle*>;
 
 
 int main() {
+//    glm::vec4 vec(0.0f, 0.0f, 0.0f, 1.0f);
+//    glm::mat4 trans = translationx44Matrix(10.0, 100.0, 100.0);
+////    glm::mat4 scale = scalex44Matrix(2.0, 2.0, 2.0);
+//
+////    glm::mat4 trans = glm::mat4(1.0);
+////    trans = glm::translate(trans, glm::vec3(10.0f, 100.0f, 100.0f));
+////    glm::mat4 scale = glm::mat4(1.0);
+////    scale = glm::scale(scale, glm::vec3(2.0, 2.0, 2.0));
+//
+//
+////    printvec4(scale[0]);
+//
+//    vec = trans * vec;
+//    printvec4(vec);
+
 
     /*
      * Default setup
@@ -134,6 +147,11 @@ int main() {
 
         for (auto & particleIT : particleMap) {
             Particle* particle = particleIT.second;
+            std::cout<<particle->getName()<<std::endl;
+            if (particle->getName() == "Planet 2") {
+                transformQ.emplace_back(particle->getIndex(), glm::vec4(0.025, 25, 0.0, 0.0));
+            }
+
             //TODO: limit this to only if there are > 8 particles. Keeping without that check for now to test cells
             if (!particle->grouped) {
                 if (cellMap.empty()) {
@@ -145,7 +163,7 @@ int main() {
                     int_fast64_t closest = -1;
                     for (auto cmIT : cellMap) {
                         if (glm::distance(cmIT.second->getPosition(),particle->getPPosition())
-                        <= Cell::cellWidth && cmIT.second->addParticle(particle)) {
+                        <= Cell::cellWidth){ // && cmIT.second->addParticle(particle)) {
                             if (closest == -1
                             || glm::distance(cmIT.second->getPosition(), particle->getPPosition())
                             < glm::distance(cellMap.find(closest)->second->getPosition(), particle->getPPosition())) {
@@ -153,7 +171,7 @@ int main() {
                             }
                         }
                     }
-                    if (closest != -1) {
+                    if (closest != -1 && (particle->getRepCell() != cellMap.find(closest)->second)) {
                         cellMap.find(closest)->second->addParticle(particle);
                         particle->setCell(closest);
                     }
@@ -164,10 +182,11 @@ int main() {
             // TODO: physics updates!!
             if (particleIT.second->grouped) {
                 for (auto it: cellMap.find(particleIT.second->getCell())->second->getParticles()) {
-                    // TODO: inter-cell updates
+                    // TODO: inter-representedCell updates
                 }
-                // TODO: intra-cell updates
+                // TODO: intra-representedCell updates
             }
+
         }
 
 
@@ -193,15 +212,20 @@ int main() {
                             }
                         }
                     }
-                    if (closest == -1) {
-                        p->setCell(cellMap.size());
-                        cellMap.emplace(cellMap.size(), new Cell(p, cellMap.size()));
+                    if (!p->cellParticle) {
+                        if (closest == -1) {
+                            p->setCell(cellMap.size());
+                            cellMap.emplace(cellMap.size(), new Cell(p, cellMap.size()));
+                        } else {
+                            cellMap.find(closest)->second->addParticle(p);
+                            p->setCell(closest);
+                        }
                     }
                     else {
-                        cellMap.find(closest)->second->addParticle(p);
-                        p->setCell(closest);
-                    }
+                        if (closest != -1 && (p->getRepCell() != cellMap.find(closest)->second)) {
 
+                        }
+                    }
                 }
             }
             transformIT = transformQ.erase(transformIT);
@@ -218,8 +242,7 @@ int main() {
     }
     while (
             (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS
-            && glfwWindowShouldClose(window) == 0)
-            || cellMap.size()==2);
+            && glfwWindowShouldClose(window) == 0));
 
     // Cleanup VBOs and Particles
     glDeleteProgram(idList.ProgramID);

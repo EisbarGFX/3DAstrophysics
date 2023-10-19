@@ -12,15 +12,12 @@
 #include <iostream>
 #include <utility>
 #include <map>
-
-#include "../Common/structs.hpp"
+#include <memory>
 
 
 extern std::vector<std::pair<uint_fast64_t, glm::vec4>> transformQ;
-#ifndef cellMap
 class Cell;
 extern std::map<uint_fast64_t,Cell*> cellMap;
-#endif // cellMap
 
 class Particle{
 protected:
@@ -31,6 +28,7 @@ protected:
     glm::vec4 physicalPosition = glm::vec4(0,0,0,1);
     glm::vec4 graphicalMovement = glm::vec4(0, 0, 0, 0);
     glm::vec4 physicalMovement = glm::vec4(0,0,0,0);
+    Cell* representedCell = nullptr; // Unrelated to getCell();
     std::string name;
 
 public:
@@ -38,9 +36,11 @@ public:
     static float graphToPhysConversion;
     static float physToGraphConversion;
     bool grouped = false;
+    bool cellParticle = false;
 
     Particle();
-    Particle(std::string name, double mass, glm::vec4 startingPosition, glm::vec4 startingMovement, uint_fast64_t index);
+    Particle(const std::string& name, double mass, glm::vec4 startingPosition, glm::vec4 startingMovement, uint_fast64_t index);
+    Particle(Cell *c, uint_fast64_t index); // Contained in Cell.cpp
     // Constructor starting position/movement is given in physical space
 
     [[nodiscard]] uint_fast64_t getIndex() const;
@@ -51,20 +51,25 @@ public:
     [[nodiscard]] glm::vec4 getPMovement() const;
     [[nodiscard]] std::string getName() const;
     [[nodiscard]] uint_fast64_t getCell() const;
+    [[nodiscard]] Cell* getRepCell() const;
 
     Particle& operator=(const Particle& sb);
     bool operator<(const Particle& sb);
     bool operator>(const Particle& sb);
     bool operator==(const Particle& sb);
 
+    __attribute_deprecated_msg__("Use transformGPosition instead.")
     void setGPosition(glm::vec3 toPoint);
+    __attribute_deprecated_msg__("Use transformPPosition instead.")
     void setPPosition(glm::vec3 toPoint);
     void setGMovement(glm::vec3 nMove);
     void setPMovement(glm::vec3 nMove);
+    void transformPPosition(glm::mat4 trans);
+    void transformGPosition(glm::mat4 trans);
     void setCell(uint_fast64_t num);
 
     bool updateMovementOf(Particle* particle);
-    void move(translationx44Matrix translation);
+    virtual void update();
 };
 
 class Planet : public Particle {
@@ -77,8 +82,14 @@ public:
     using Particle::Particle;
 };
 
+__attribute_deprecated_msg__("Use a Scale Matrix Instead")
 glm::vec4 scalePos(glm::vec4 vec, float scalar);
-glm::vec3 scalePos(glm::vec3 vec, float scalar);
 
+#ifndef translationx44Matrix
+glm::mat4 translationx44Matrix(float x, float y, float z);
+glm::mat4 translationx44Matrix(float unif);
+glm::mat4 scalex44Matrix(float x, float y, float z);
+glm::mat4 scalex44Matrix(float unif);
+#endif //translationx44Matrix
 
 #endif //INC_3DASTRO_PARTICLE_HPP
